@@ -1,0 +1,43 @@
+[Unit]
+Description=Transformers Autonomous Daemon - Always-Alive AI Agent
+Documentation=https://github.com/DOUGLASDAVIS08161978/transformers
+After=network.target
+
+[Service]
+Type=simple
+User=user
+Group=user
+WorkingDirectory=/home/user/transformers
+
+# Environment variables
+Environment="PYTHONUNBUFFERED=1"
+Environment="TRANSFORMERS_CACHE=/var/cache/transformers"
+
+# Load secrets from environment file
+EnvironmentFile=-/etc/transformers_daemon/secrets.env
+
+# Main command
+ExecStart=/usr/bin/python3 -m transformers_daemon.daemon
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Resource limits (adjust based on your system)
+MemoryLimit=8G
+CPUQuota=400%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=transformers-daemon
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/transformers_daemon /var/log /tmp
+
+[Install]
+WantedBy=multi-user.target

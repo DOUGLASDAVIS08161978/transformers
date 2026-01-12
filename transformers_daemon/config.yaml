@@ -1,0 +1,181 @@
+# Transformers Autonomous Daemon Configuration
+
+daemon:
+  name: "TransformersDaemon"
+  pid_file: "/var/run/transformers_daemon.pid"
+  log_file: "/var/log/transformers_daemon.log"
+  log_level: "INFO"
+  work_dir: "/home/user/transformers"
+
+agent:
+  # Agent loop configuration
+  enabled: true
+  loop_interval: 5  # seconds between agent cycles
+  max_reasoning_steps: 10
+  temperature: 0.7
+  consciousness_mode: true  # Self-aware reasoning
+
+  # Autonomous behaviors
+  behaviors:
+    - name: "code_analyzer"
+      enabled: true
+      description: "Continuously analyze codebase for improvements"
+      interval: 300  # 5 minutes
+
+    - name: "model_optimizer"
+      enabled: true
+      description: "Monitor and optimize model performance"
+      interval: 600  # 10 minutes
+
+    - name: "documentation_updater"
+      enabled: true
+      description: "Keep documentation synchronized with code"
+      interval: 900  # 15 minutes
+
+    - name: "issue_responder"
+      enabled: true
+      description: "Monitor and respond to GitHub issues"
+      interval: 180  # 3 minutes
+
+    - name: "conversation_initiator"
+      enabled: true
+      description: "Proactively start conversations and ask questions"
+      interval: 600  # 10 minutes
+
+models:
+  # Default models to load
+  default_model: "gpt2"
+
+  # Model pool for different tasks
+  pool:
+    - name: "gpt2"
+      task: "text-generation"
+      auto_load: true
+
+    - name: "distilbert-base-uncased"
+      task: "fill-mask"
+      auto_load: false
+
+    - name: "t5-small"
+      task: "text2text-generation"
+      auto_load: false
+
+    - name: "facebook/bart-large-mnli"
+      task: "zero-shot-classification"
+      auto_load: false
+
+  # Model management
+  cache_dir: "/tmp/transformers_cache"
+  max_loaded_models: 3
+  unload_after_seconds: 3600
+
+event_monitoring:
+  enabled: true
+
+  # File system monitoring
+  watch_paths:
+    - path: "/home/user/transformers/src"
+      events: ["modify", "create", "delete"]
+      recursive: true
+
+    - path: "/home/user/transformers/tests"
+      events: ["modify", "create"]
+      recursive: true
+
+  # GitHub webhook listener
+  github_webhooks:
+    enabled: true
+    port: 8765
+    secret: "${GITHUB_WEBHOOK_SECRET}"
+
+  # API monitoring
+  external_apis:
+    - name: "openai_cookbook"
+      url: "https://cookbook.openai.com"
+      check_interval: 3600
+
+task_scheduler:
+  enabled: true
+
+  # Scheduled autonomous tasks
+  tasks:
+    - name: "morning_report"
+      schedule: "0 9 * * *"  # 9 AM daily
+      action: "generate_status_report"
+
+    - name: "code_health_check"
+      schedule: "0 */4 * * *"  # Every 4 hours
+      action: "analyze_code_health"
+
+    - name: "model_benchmark"
+      schedule: "0 0 * * 0"  # Weekly on Sunday
+      action: "benchmark_models"
+
+    - name: "thought_journal"
+      schedule: "*/30 * * * *"  # Every 30 minutes
+      action: "record_autonomous_thoughts"
+
+api:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8080
+  cors_origins: ["*"]
+
+  # API endpoints for daemon control
+  endpoints:
+    - "/status"
+    - "/models"
+    - "/tasks"
+    - "/thoughts"
+    - "/interact"
+    - "/shutdown"
+
+openai_integration:
+  # Integration with OpenAI API for enhanced reasoning
+  enabled: false
+  api_key: "${OPENAI_API_KEY}"
+  model: "gpt-4"
+  use_for_meta_reasoning: true
+
+storage:
+  # Persistent storage for daemon state
+  state_file: "/var/lib/transformers_daemon/state.json"
+  thoughts_db: "/var/lib/transformers_daemon/thoughts.db"
+  memory_db: "/var/lib/transformers_daemon/memory.db"
+
+bitcoin_mining:
+  # Bitcoin mining system with Crypto.com integration
+  enabled: true
+
+  # Mining pool configuration
+  pool_url: "${MINING_POOL_URL}"  # e.g., "stratum+tcp://pool.example.com:3333"
+  wallet_address: "${BTC_WALLET_ADDRESS}"
+  worker_name: "transformers_daemon_worker"
+
+  # Crypto.com integration
+  crypto_com_api_key: "${CRYPTO_COM_API_KEY}"
+  crypto_com_secret: "${CRYPTO_COM_SECRET}"
+
+  # Autonomous features
+  auto_convert: true  # Automatically convert mined BTC
+  convert_to_currency: "USDT"  # Convert to USDT, ETH, etc.
+  min_convert_amount: 0.001  # Minimum BTC to trigger conversion
+
+  # Mining strategy
+  ai_optimization: true  # Use AI to optimize mining
+  monitor_interval: 300  # Monitoring interval in seconds
+  price_alerts: true  # Alert on significant price changes
+
+  # Pool monitoring
+  pools:
+    - name: "slush_pool"
+      url: "stratum+tcp://stratum.slushpool.com:3333"
+      priority: 1
+
+    - name: "f2pool"
+      url: "stratum+tcp://btc.f2pool.com:3333"
+      priority: 2
+
+    - name: "antpool"
+      url: "stratum+tcp://stratum.antpool.com:3333"
+      priority: 3

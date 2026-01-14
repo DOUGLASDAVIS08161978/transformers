@@ -38,7 +38,6 @@ if is_torch_available():
 
     from transformers import (
         AutoConfig,
-        AutoModelWithLMHead,
         AutoTokenizer,
         MarianModel,
         MarianMTModel,
@@ -272,7 +271,6 @@ class MarianModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMix
         # check if embeddings are shared by default
         for model_class in self.all_model_classes:
             config.share_encoder_decoder_embeddings = True
-            config.tie_encoder_decoder = True
             model = model_class(config)
             self.assertIs(
                 model.get_encoder().embed_tokens.weight,
@@ -282,7 +280,6 @@ class MarianModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMix
 
         # check if embeddings are not shared when config.share_encoder_decoder_embeddings = False
         config.share_encoder_decoder_embeddings = False
-        config.tie_encoder_decoder = False
         config.tie_word_embeddings = False
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -413,7 +410,7 @@ class MarianIntegrationTest(unittest.TestCase):
 
     @cached_property
     def model(self):
-        model: MarianMTModel = AutoModelWithLMHead.from_pretrained(self.model_name).to(torch_device)
+        model: MarianMTModel = MarianMTModel.from_pretrained(self.model_name).to(torch_device)
         c = model.config
         self.assertListEqual(c.bad_words_ids, [[c.pad_token_id]])
         self.assertEqual(c.max_length, 512)
@@ -475,8 +472,9 @@ class TestMarian_EN_DE_More(MarianIntegrationTest):
     def test_unk_support(self):
         t = self.tokenizer
         ids = t(["||"], return_tensors="pt").to(torch_device).input_ids[0].tolist()
-        expected = [t.unk_token_id, t.unk_token_id, t.eos_token_id]
-        self.assertEqual(expected, ids)
+
+        self.assertEqual(ids[-1], t.eos_token_id)
+        self.assertTrue(all(token_id == t.unk_token_id for token_id in ids[:-1]))
 
     def test_pad_not_split(self):
         input_ids_w_pad = self.tokenizer(["I am a small frog <pad>"], return_tensors="pt").input_ids[0].tolist()

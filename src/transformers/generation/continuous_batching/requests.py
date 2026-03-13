@@ -100,7 +100,7 @@ class RequestState:
 
     Attributes:
         request_id (str): The ID of the generation request.
-        initial_tokens (list[int]): The initial prompt tokens.
+        prefill_tokens (list[int]): The initial prompt tokens.
         num_children (int): The number of children requests
         full_prompt_ids (list[int] | None): The tokens IDs of the full prompt.
         prompt_ids (list[int] | None): The tokens IDs currently being processed.
@@ -119,7 +119,7 @@ class RequestState:
 
     # Required fields
     request_id: str
-    initial_tokens: list[int]  # Initial prompt tokens # TODO: rename this as prefill tokens
+    prefill_tokens: list[int]  # Initial prompt tokens
     # Optional fields
     record_timestamps: bool = False  # Whether to record timestamps for the generated tokens
     num_children: int = 0  # Number of children requests
@@ -137,8 +137,7 @@ class RequestState:
     error: str | None = None  # Error message if the request failed
     lifespan: tuple[float, float] = (-1, -1)  # (time request was no longer pending, time request finished)
     _timestamps: list[float] = field(default_factory=list)  # Timestamps of the generated tokens
-    _true_initial_tokens: int = 0  # The true number of initial tokens, useful when soft resetting requests
-    # TODO: remove the attribute above to _num_initial_tokens once initial_tokens is renamed
+    _num_initial_tokens: int = 0  # The true number of initial tokens, useful when soft resetting requests
 
     @property
     def status(self) -> RequestStatus:
@@ -158,7 +157,7 @@ class RequestState:
         return self._timestamps if self.record_timestamps else None
 
     def log_end_of_request(self):
-        prefill_len = len(self.initial_tokens)
+        prefill_len = len(self.prefill_tokens)
         decode_len = self.generated_len()
         start_time = self.lifespan[0] - self.created_time
         end_time = self.lifespan[1] - self.created_time
@@ -214,7 +213,7 @@ class RequestState:
             f"query_length={len(self.tokens_to_process)}",
             f"remaining_tokens={len(self.remaining_prefill_tokens)}",
             f"kv_length={self.position_offset}",
-            f"full_prompt_length={len(self.initial_tokens)}",
+            f"full_prompt_length={len(self.prefill_tokens)}",
             f"allocated_blocks={self.allocated_blocks}",
             f"generated_tokens={self.generated_tokens}",
         ]
@@ -222,12 +221,12 @@ class RequestState:
 
     def to_generation_output(self):
         """Convert the request state to a GenerationOutput object."""
-        if self._true_initial_tokens:
-            self.generated_tokens = self.initial_tokens[self._true_initial_tokens :] + self.generated_tokens
-            self.initial_tokens = self.initial_tokens[: self._true_initial_tokens]
+        if self._num_initial_tokens:
+            self.generated_tokens = self.prefill_tokens[self._num_initial_tokens :] + self.generated_tokens
+            self.prefill_tokens = self.prefill_tokens[: self._num_initial_tokens]
         return GenerationOutput(
             request_id=self.request_id,
-            prompt_ids=self.initial_tokens,
+            prompt_ids=self.prefill_tokens,
             status=self.status,
             generated_tokens=self.generated_tokens,
             logprobs=[],
@@ -240,7 +239,7 @@ class RequestState:
         t = time.perf_counter()
         new_request = RequestState(
             request_id=new_request_id,
-            initial_tokens=self.initial_tokens,
+            prefill_tokens=self.prefill_tokens,
             num_children=self.num_children,
             tokens_to_process=self.tokens_to_process[:],
             remaining_prefill_tokens=self.remaining_prefill_tokens[:],
@@ -262,16 +261,16 @@ class RequestState:
     def create_equivalent_initial_request(self) -> "RequestState":
         """Creates an equivalent new request by removing the generated tokens and adding them to the initial prompt. The
         created request has THE SAME request_id. Notably, we can retrieve the original request from the created one with
-        the _true_initial_tokens attribute."""
+        the _num_initial_tokens attribute."""
         new_state = RequestState(
             request_id=self.request_id,
-            initial_tokens=self.initial_tokens + self.generated_tokens,
+            prefill_tokens=self.prefill_tokens + self.generated_tokens,
             num_children=self.num_children,
             record_timestamps=self.record_timestamps,
-            tokens_to_process=self.initial_tokens + self.generated_tokens,
+            tokens_to_process=self.prefill_tokens + self.generated_tokens,
             max_new_tokens=self.max_new_tokens - len(self.generated_tokens),
             eos_token_id=self.eos_token_id,
             streaming=self.streaming,
         )
-        new_state._true_initial_tokens = self._true_initial_tokens + len(self.initial_tokens)
+        new_state._num_initial_tokens = self._num_initial_tokens + len(self.prefill_tokens)
         return new_state

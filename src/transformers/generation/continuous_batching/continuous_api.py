@@ -442,7 +442,7 @@ class ContinuousBatchProcessor:
         else:
             request_id, state = next(iter(self.scheduler.active_requests.items()))
         logger.info(
-            f"Soft resetting request {request_id} with {len(state.initial_tokens)} initial tokens and "
+            f"Soft resetting request {request_id} with {len(state.prefill_tokens)} initial tokens and "
             f"{len(state.generated_tokens)} generated tokens"
         )
         # Create a copy of the offloaded request keeping the generated tokens as addition to the initial prompt
@@ -993,7 +993,7 @@ class ContinuousBatchingManager:
         # NOTE: do we want to handle a case when the user wants token ids returned instead of decoded text?
         state = RequestState(
             request_id=request_id,
-            initial_tokens=list(input_ids),
+            prefill_tokens=list(input_ids),
             num_children=self.num_return_sequences - 1,
             record_timestamps=record_timestamps,
             tokens_to_process=list(input_ids),

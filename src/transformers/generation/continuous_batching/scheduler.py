@@ -47,7 +47,7 @@ class Scheduler(ABC):
         if self.retain_cache_on_finish and state.request_id in self.active_requests:
             old_state = self.active_requests.pop(state.request_id)
             state.tokens_to_process = state.tokens_to_process[
-                len(old_state.initial_tokens) :
+                len(old_state.prefill_tokens) :
             ]  # XXX: check for indexing error?
             state.allocated_blocks = old_state.allocated_blocks
             state.position_offset = old_state.position_offset

@@ -413,7 +413,7 @@ class PagedAttentionCache:
                 self._block_manager.mark_shareable_blocks_as_complete(
                     num_complete_blocks=num_complete_blocks,
                     allocated_blocks=cm.block_table[state.request_id],
-                    prompt_ids=(state.initial_tokens + state.generated_tokens),
+                    prompt_ids=(state.prefill_tokens + state.generated_tokens),
                 )
 
     def copy_cache(self, source_blocks: list[int], forked_blocks: list[int]) -> None:

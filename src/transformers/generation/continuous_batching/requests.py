@@ -184,10 +184,6 @@ class RequestState:
         Returns:
             bool: True if the request is now complete, False otherwise
         """
-        # Only update if we're in decoding state # TODO: seems useless (always true) -- remove this
-        if self.status != RequestStatus.DECODING:
-            return False
-
         # If we're recording timestamps, add timestamp to the list
         if self.record_timestamps:
             self._timestamps.append(time.perf_counter())
